@@ -23,3 +23,67 @@
  * Выведите план обменов для возвращения разумов героев в свои телав виде пар различных чисел - номеров тел которые участвовали в соответствующем обмене.Причем никакие два тела не должны обмениваться между собой разумами более одного раза,включая исходные обмены. Если обменов не требуется, то можно ничего не выводить.Если планов обменов несколько, то выведите любой из них (не обязательно минимальный).
  * Вернуть разумы героев в свои тела всегда возможно.
  * */
+
+const { readFile } = require('fs/promises')
+const { resolve } = require('path')
+
+async function readInput(filePath) {
+  const input = await readFile(resolve(__dirname, filePath), { encoding: 'utf8' })
+  return input
+    .trim()
+    .split(/\s/)
+    .map(v => +v)
+}
+
+function swapAndLog(key1, key2, map, log) {
+  ;[map[key1], map[key2]] = [map[key2], map[key1]]
+  log && log.push(`${key1} ${key2}`)
+}
+
+function generateFuturamaPermutations(heroes, totalPermutations, ...permutations) {
+  const heroesMap = {}
+  const used = new Set()
+  const answers = []
+
+  for (let i = 1; i <= heroes; i++) {
+    heroesMap[i] = i
+  }
+
+  for (let i = 0; i < totalPermutations; i++) {
+    swapAndLog(permutations[2 * i], permutations[2 * i + 1], heroesMap)
+  }
+
+  for (let key in heroesMap) {
+    const hero = +key
+    if (used.has(hero) || heroesMap[hero] === hero || hero === heroesMap[heroes - 1] || hero === heroesMap[heroes]) {
+      continue
+    }
+
+    const cycle = [hero]
+    let next = heroesMap[hero]
+    while (next !== hero) {
+      cycle.push(next)
+      next = heroesMap[next]
+    }
+
+    for (let i = 0; i < cycle.length; i++) {
+      used.add(cycle[i])
+
+      if (i === cycle.length - 1) {
+        swapAndLog(heroes, cycle[i], heroesMap, answers)
+        swapAndLog(heroes, cycle[0], heroesMap, answers)
+      }
+      swapAndLog(heroes - 1, cycle[i], heroesMap, answers)
+    }
+  }
+
+  if (heroes !== heroesMap[heroes]) {
+    swapAndLog(heroes - 1, heroes, heroesMap, answers)
+  }
+
+  return answers.join('\n')
+}
+
+;(async () => {
+  console.log(await generateFuturamaPermutations(...(await readInput('input.txt'))))
+})()
